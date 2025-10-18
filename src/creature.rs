@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{edge::Edge, node::Node, utils::cheap_normal};
+use crate::{edge::Edge, floor::Floor, node::Node, utils::cheap_normal};
 
 const DEFAULT_ELASTICITY: f32 = 0.001;
 const REST_LENGTH_RATIO: f32 = 0.5;
@@ -9,22 +9,17 @@ const MAX_MASS: f32 = 5.0;
 const MASS_DISPLAY_MULTIPLIER: f32 = 5.0;
 const CHEAP_NORMAL_VARIANCE: f32 = 0.005;
 const MAX_EDGE_THICKNESS: f32 = 5.0;
+const GRAVITY_ACCELERATION: f32 = 0.1;
 
 pub struct Creature {
     pub color: Color,
-
-    // Array of all nodes in the creature
     pub nodes: Vec<Node>,
-
-    // Elasticity applies to every edge
     pub elasticity: f32,
-
-    // Index pairs for edges that exist
     pub edges: Vec<Edge>,
 }
 
 impl Creature {
-    pub fn new_rand(num_nodes: u32) -> Self {
+    pub fn new_rand(num_nodes: u32, pos: Vec2, radius: f32) -> Self {
         let color = Color::new(
             rand::gen_range(0.0, 1.0),
             rand::gen_range(0.0, 1.0),
@@ -35,10 +30,14 @@ impl Creature {
         let nodes: Vec<Node> = (0..num_nodes)
             .map(|_| Node {
                 mass: rand::gen_range(MIN_MASS, MAX_MASS),
-                pos: Vec2::new(
-                    rand::gen_range(0.0, screen_width()),
-                    rand::gen_range(0.0, screen_height()),
-                ),
+                // pos: Vec2::new(
+                //     rand::gen_range(0.0, screen_width()),
+                //     rand::gen_range(0.0, screen_height()),
+                // ),
+                pos: pos
+                    + radius
+                        * Vec2::from_angle(rand::gen_range(0.0, 2.0 * std::f32::consts::PI))
+                        * rand::gen_range(0.0, 1.0),
                 velocity: Vec2::ZERO,
             })
             .collect();
@@ -63,7 +62,7 @@ impl Creature {
         }
     }
 
-    pub fn update_nodes(&mut self) {
+    pub fn update_nodes(&mut self, floor: &Floor) {
         let mut forces: Vec<Vec2> = vec![Vec2::ZERO; self.nodes.len()];
 
         for edge in &self.edges {
@@ -80,8 +79,9 @@ impl Creature {
         }
 
         for i in 0..self.nodes.len() {
-            let acceleration = forces[i] / self.nodes[i].mass;
-            self.nodes[i].velocity += acceleration;
+            self.nodes[i].apply_gravity(GRAVITY_ACCELERATION);
+            self.nodes[i].apply_force(forces[i]);
+            self.nodes[i].interact_with_floor(floor);
             self.nodes[i].apply_velocity();
         }
     }
@@ -109,7 +109,7 @@ impl Creature {
             draw_circle(
                 node.pos.x,
                 node.pos.y,
-                MASS_DISPLAY_MULTIPLIER * node.mass,
+                MASS_DISPLAY_MULTIPLIER * node.mass.sqrt(),
                 self.color,
             );
         }
