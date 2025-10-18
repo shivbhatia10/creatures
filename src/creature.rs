@@ -9,7 +9,7 @@ const MAX_MASS: f32 = 5.0;
 const MASS_DISPLAY_MULTIPLIER: f32 = 5.0;
 const CHEAP_NORMAL_VARIANCE: f32 = 0.005;
 const MAX_EDGE_THICKNESS: f32 = 2.0;
-const GRAVITY_ACCELERATION: f32 = 0.1;
+const GRAVITY_ACCELERATION: f32 = 0.01;
 
 pub struct Creature {
     pub color: Color,

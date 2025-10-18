@@ -10,7 +10,7 @@ use crate::{creature::Creature, floor::Floor};
 
 const FLOOR_DIST_FROM_TOP_OF_SCREEN: f32 = 0.9;
 const BOUNCE: f32 = 1.0;
-const FRICTION_COEFF: f32 = 0.2;
+const FRICTION_COEFF: f32 = 1.0;
 const CREATURE_RADIUS: f32 = 250.0;
 
 fn window_conf() -> Conf {
@@ -33,8 +33,8 @@ async fn main() {
     };
 
     let mut c1 = Creature::new_rand(
-        5,
-        Vec2::new(screen_width() / 2.0, screen_height() * 1.5 / 2.0),
+        6,
+        Vec2::new(screen_width() / 2.0, screen_height() / 2.0),
         CREATURE_RADIUS,
     );
     loop {
