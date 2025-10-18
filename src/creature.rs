@@ -2,6 +2,14 @@ use macroquad::prelude::*;
 
 use crate::{edge::Edge, node::Node, utils::cheap_normal};
 
+const DEFAULT_ELASTICITY: f32 = 0.001;
+const REST_LENGTH_RATIO: f32 = 0.5;
+const MIN_MASS: f32 = 1.0;
+const MAX_MASS: f32 = 5.0;
+const MASS_DISPLAY_MULTIPLIER: f32 = 5.0;
+const CHEAP_NORMAL_VARIANCE: f32 = 0.005;
+const MAX_EDGE_THICKNESS: f32 = 5.0;
+
 pub struct Creature {
     pub color: Color,
 
@@ -26,7 +34,7 @@ impl Creature {
 
         let nodes: Vec<Node> = (0..num_nodes)
             .map(|_| Node {
-                mass: rand::gen_range(1.0, 5.0),
+                mass: rand::gen_range(MIN_MASS, MAX_MASS),
                 pos: Vec2::new(
                     rand::gen_range(0.0, screen_width()),
                     rand::gen_range(0.0, screen_height()),
@@ -41,7 +49,8 @@ impl Creature {
                 edges.push(Edge {
                     start_index: i as usize,
                     end_index: j as usize,
-                    rest_length: 0.5 * nodes[i as usize].pos.distance(nodes[j as usize].pos),
+                    rest_length: REST_LENGTH_RATIO
+                        * nodes[i as usize].pos.distance(nodes[j as usize].pos),
                 });
             }
         }
@@ -49,7 +58,7 @@ impl Creature {
         Creature {
             color,
             nodes,
-            elasticity: 0.001,
+            elasticity: DEFAULT_ELASTICITY,
             edges,
         }
     }
@@ -83,7 +92,8 @@ impl Creature {
             let end_node = &self.nodes[edge.end_index];
 
             let actual_length = start_node.pos.distance(end_node.pos);
-            let thickness = 5.0 * cheap_normal(0.01 * (actual_length - edge.rest_length));
+            let thickness = MAX_EDGE_THICKNESS
+                * cheap_normal(CHEAP_NORMAL_VARIANCE * (actual_length - edge.rest_length));
 
             draw_line(
                 start_node.pos.x,
@@ -96,7 +106,12 @@ impl Creature {
         }
 
         for node in &self.nodes {
-            draw_circle(node.pos.x, node.pos.y, 5.0 * node.mass, self.color);
+            draw_circle(
+                node.pos.x,
+                node.pos.y,
+                MASS_DISPLAY_MULTIPLIER * node.mass,
+                self.color,
+            );
         }
     }
 }
